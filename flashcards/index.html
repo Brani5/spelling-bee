@@ -100,6 +100,20 @@
   .hw-ok{border-left:3px solid var(--gold)}
   .history-summary{background:var(--card);border-radius:14px;padding:16px;margin-bottom:16px;text-align:center}
   .history-summary .hs-big{font-size:2em;font-weight:700}
+  /* Login screen */
+  .login-screen{text-align:center;padding:30px 16px}
+  .login-screen .bee{margin-bottom:10px}
+  .login-avatar{width:80px;height:80px;border-radius:50%;background:var(--card);border:3px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:2.2em;margin:0 auto 8px}
+  .user-list{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:16px 0}
+  .user-card{background:var(--card);border:2px solid #333;border-radius:16px;padding:16px 20px;cursor:pointer;transition:all .2s;text-align:center;min-width:100px}
+  .user-card:active{transform:scale(.96)}
+  .user-card .uc-avatar{font-size:2em;margin-bottom:4px}
+  .user-card .uc-name{font-weight:700;font-size:1em}
+  .user-card .uc-stats{color:#666;font-size:.75em;margin-top:2px}
+  .new-user-form{margin-top:16px}
+  .name-input{padding:12px;font-size:1.1em;text-align:center;border:2px solid #333;border-radius:12px;background:var(--blue);color:#fff;outline:none;width:80%;max-width:280px}
+  .name-input:focus{border-color:var(--gold)}
+  .or-divider{color:#555;margin:16px 0;font-size:.85em}
   .hidden{display:none!important}
   @media(max-width:380px){.hint-display{font-size:1.8em;letter-spacing:6px}.speak-btn{width:56px;height:56px;font-size:1.5em}}
 </style>
@@ -107,11 +121,29 @@
 <body>
 <div class="container">
 
+  <!-- LOGIN SCREEN -->
+  <div id="loginScreen">
+    <div class="login-screen">
+      <div class="bee"><img src="../visuals/Otto-rollin.png" alt="Otto's Spelling Bee" style="width:180px;border-radius:20px"></div>
+      <h1>Spelling Bee 🐝</h1>
+      <p class="subtitle">Who's playing?</p>
+      <div class="user-list" id="userList"></div>
+      <div class="or-divider">— or join as new player —</div>
+      <div class="new-user-form">
+        <input type="text" class="name-input" id="newUserName" placeholder="Your name..." maxlength="20" autocomplete="off">
+        <div class="btn-row">
+          <button class="btn btn-gold" onclick="createUser()">Let's Go! 🚀</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- START SCREEN -->
-  <div id="startScreen">
+  <div id="startScreen" class="hidden">
     <div class="bee"><img src="../visuals/Otto-rollin.png" alt="Otto's Spelling Bee" style="width:200px;border-radius:20px"></div>
-    <h1>Otto's Spelling Bee</h1>
+    <h1>Spelling Bee 🐝</h1>
     <p class="subtitle">Squid Game Edition 🦑</p>
+    <p style="text-align:center;color:var(--gold);font-size:.9em;margin-bottom:12px" id="welcomeUser"></p>
     <div class="mode-card" onclick="pickMode('spell')" id="modeSpellCard">
       <h3>✏️ Spell It!</h3>
       <p>Listen to the word and type it. 3 difficulty levels!</p>
@@ -122,6 +154,7 @@
     </div>
     <div class="btn-row" style="margin-top:10px">
       <button class="btn btn-secondary" onclick="showHistory()" style="font-size:.9em">📊 My Progress</button>
+      <button class="btn btn-secondary" onclick="switchUser()" style="font-size:.9em">👤 Switch Player</button>
     </div>
     <div id="modeSettings" class="hidden" style="margin-top:16px">
       <p style="color:#888;font-size:.85em;margin-bottom:10px">Difficulty:</p>
@@ -358,10 +391,75 @@ function buildRevealGrid() {
 }
 function revealTile(index) { const tile = document.getElementById('tile' + index); if (tile) tile.classList.add('revealed'); }
 
-// ==================== HISTORY (localStorage) ====================
-const HISTORY_KEY = 'otto_spelling_bee_history';
-function getHistory() { try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || { sessions: [], words: {} }; } catch(e) { return { sessions: [], words: {} }; } }
-function saveHistory(h) { localStorage.setItem(HISTORY_KEY, JSON.stringify(h)); }
+// ==================== USER MANAGEMENT ====================
+const USERS_KEY = 'spelling_bee_users';
+var currentUser = null;
+var AVATARS = ['🐝','🦊','🐸','🦁','🐼','🦄','🐙','🦋','🐢','🎮','⚡','🌟','🔥','💎','🎯'];
+
+function getUsers() { try { return JSON.parse(localStorage.getItem(USERS_KEY)) || []; } catch(e) { return []; } }
+function saveUsers(u) { localStorage.setItem(USERS_KEY, JSON.stringify(u)); }
+
+function renderLoginScreen() {
+  var users = getUsers();
+  var list = document.getElementById('userList');
+  if (!users.length) { list.innerHTML = '<p style="color:#555">No players yet</p>'; return; }
+  var html = '';
+  users.forEach(function(u) {
+    var totalW = 0, totalC = 0;
+    var h = getHistoryFor(u.name);
+    Object.values(h.words).forEach(function(w) { totalC += w.correct; totalW += w.wrong; });
+    var total = totalC + totalW;
+    var pct = total ? Math.round(totalC / total * 100) : 0;
+    html += '<div class="user-card" onclick="loginUser(\'' + u.name.replace(/'/g, "\\'") + '\')">';
+    html += '<div class="uc-avatar">' + u.avatar + '</div>';
+    html += '<div class="uc-name">' + u.name + '</div>';
+    html += '<div class="uc-stats">' + (total ? pct + '% · ' + total + ' words' : 'New player') + '</div>';
+    html += '</div>';
+  });
+  list.innerHTML = html;
+}
+
+function createUser() {
+  var name = document.getElementById('newUserName').value.trim();
+  if (!name) { document.getElementById('newUserName').focus(); return; }
+  var users = getUsers();
+  // Check if name already exists (case insensitive)
+  var existing = users.find(function(u) { return u.name.toLowerCase() === name.toLowerCase(); });
+  if (existing) { loginUser(existing.name); return; }
+  var avatar = AVATARS[users.length % AVATARS.length];
+  users.push({ name: name, avatar: avatar, created: new Date().toISOString() });
+  saveUsers(users);
+  loginUser(name);
+}
+
+function loginUser(name) {
+  currentUser = name;
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('startScreen').classList.remove('hidden');
+  var users = getUsers();
+  var u = users.find(function(u) { return u.name === name; });
+  document.getElementById('welcomeUser').textContent = (u ? u.avatar + ' ' : '') + 'Hi, ' + name + '!';
+}
+
+function switchUser() {
+  currentUser = null;
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('modeSettings').classList.add('hidden');
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('newUserName').value = '';
+  renderLoginScreen();
+}
+
+// Enter key on name input
+document.getElementById('newUserName').addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); createUser(); } });
+
+renderLoginScreen();
+
+// ==================== HISTORY (per-user, localStorage) ====================
+function historyKeyFor(name) { return 'spelling_bee_h_' + name.toLowerCase().replace(/[^a-z0-9]/g, '_'); }
+function getHistoryFor(name) { try { return JSON.parse(localStorage.getItem(historyKeyFor(name))) || { sessions: [], words: {} }; } catch(e) { return { sessions: [], words: {} }; } }
+function getHistory() { if (!currentUser) return { sessions: [], words: {} }; return getHistoryFor(currentUser); }
+function saveHistory(h) { if (!currentUser) return; localStorage.setItem(historyKeyFor(currentUser), JSON.stringify(h)); }
 
 function logAttempt(word, correct) {
   const h = getHistory();
