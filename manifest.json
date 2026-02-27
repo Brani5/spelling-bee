@@ -1,0 +1,18 @@
+{
+  "name": "Otto's Spelling Bee 🐝",
+  "short_name": "Spelling Bee",
+  "description": "Spelling Bee trainer - Squid Game Edition",
+  "start_url": "./flashcards/index.html",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#f5af19",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "./visuals/icona.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

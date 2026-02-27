@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Spelling Bee">
+<meta name="theme-color" content="#1a1a2e">
+<link rel="manifest" href="../manifest.json">
+<link rel="apple-touch-icon" href="../visuals/icona.png">
+<title>Otto's Spelling Bee 🐝</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--green:#4ecca3;--red:#ff6b6b;--gold:#f5af19;--dark:#1a1a2e;--card:#16213e;--blue:#0f3460}
+  body{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--dark);color:#eee;min-height:100dvh;overflow-x:hidden}
+  .container{max-width:500px;margin:0 auto;padding:16px}
+  h1{text-align:center;font-size:1.6em;margin:8px 0;background:linear-gradient(135deg,#f5af19,#f12711);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .subtitle{text-align:center;color:#666;font-size:.85em;margin-bottom:12px}
+  .btn{padding:12px 22px;border:none;border-radius:12px;font-size:1em;cursor:pointer;font-weight:600;transition:all .15s;-webkit-tap-highlight-color:transparent}
+  .btn:active{transform:scale(.96)}
+  .btn-primary{background:var(--green);color:var(--dark)}
+  .btn-secondary{background:var(--card);color:#aaa;border:2px solid #333}
+  .btn-gold{background:var(--gold);color:var(--dark)}
+  .btn-small{padding:8px 14px;font-size:.85em;border-radius:10px}
+  .btn-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+  .categories{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;justify-content:center}
+  .cat-btn{padding:6px 12px;border:2px solid #333;border-radius:18px;background:var(--card);color:#888;font-size:.8em;cursor:pointer}
+  .cat-btn.active{border-color:var(--gold);color:var(--gold)}
+  .diff-toggle{display:flex;justify-content:center;gap:8px;margin-bottom:14px}
+  .diff-btn{padding:8px 16px;border:2px solid #333;border-radius:10px;background:var(--card);color:#888;font-size:.9em;cursor:pointer}
+  .diff-btn.active{border-color:var(--green);color:var(--green);background:var(--blue)}
+  .card{background:linear-gradient(145deg,var(--card),var(--blue));border-radius:20px;padding:24px;min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;margin-bottom:16px;box-shadow:0 8px 25px rgba(0,0,0,.3);position:relative;transition:transform .3s}
+  .card.correct-anim{animation:correctPulse .5s ease}
+  .card.wrong-anim{animation:wrongShake .4s ease}
+  @keyframes correctPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04);box-shadow:0 0 30px rgba(78,204,163,.4)}}
+  @keyframes wrongShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+  .pattern-badge{display:inline-block;padding:4px 12px;background:rgba(245,175,25,.15);border:1px solid var(--gold);border-radius:12px;font-size:.8em;color:var(--gold);margin-bottom:12px}
+  .sentence{font-size:.95em;color:#999;text-align:center;font-style:italic;margin:8px 0;display:none}
+  .sentence.visible{display:block}
+  .diff-label{position:absolute;top:12px;right:14px;font-size:.7em;padding:3px 10px;border-radius:10px}
+  .diff-easy{background:#1b4332;color:#95d5b2}
+  .diff-medium{background:#3d2c00;color:var(--gold)}
+  .diff-challenging{background:#3d0000;color:var(--red)}
+  .hint-display{font-size:2.2em;letter-spacing:10px;font-family:'Courier New',monospace;color:var(--green);margin:12px 0;text-align:center;min-height:1.4em;user-select:none}
+  .speak-btn{width:70px;height:70px;border-radius:50%;border:3px solid var(--red);background:rgba(233,69,96,.15);color:var(--red);font-size:2em;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+  .speak-btn:active{transform:scale(.9);background:rgba(233,69,96,.3)}
+  .speak-btn.playing{animation:speakPulse .8s infinite}
+  @keyframes speakPulse{0%,100%{box-shadow:0 0 0 0 rgba(233,69,96,.4)}50%{box-shadow:0 0 0 15px rgba(233,69,96,0)}}
+  .help-btns{display:flex;gap:8px;justify-content:center;margin:8px 0;flex-wrap:wrap}
+  .spell-input{width:100%;padding:14px;font-size:1.4em;text-align:center;letter-spacing:6px;text-transform:uppercase;border:2px solid #333;border-radius:12px;background:var(--blue);color:#fff;outline:none;font-family:'Courier New',monospace}
+  .spell-input:focus{border-color:var(--green)}
+  .spell-input.ok{border-color:var(--green);background:#0a3d2e}
+  .spell-input.err{border-color:var(--red);background:#3d1515}
+  .sg-path{display:flex;align-items:center;justify-content:center;gap:4px;margin-bottom:16px;padding:10px;background:var(--card);border-radius:14px}
+  .sg-step{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7em;font-weight:700;border:2px solid #333;color:#555;background:var(--dark);transition:all .3s}
+  .sg-step.done{border-color:var(--green);color:var(--green);background:#0a3d2e}
+  .sg-step.current{border-color:var(--gold);color:var(--gold);background:#3d2c00;animation:currentGlow 1.5s infinite}
+  .sg-step.locked{opacity:.4}
+  @keyframes currentGlow{0%,100%{box-shadow:0 0 0 0 rgba(245,175,25,.3)}50%{box-shadow:0 0 0 8px rgba(245,175,25,0)}}
+  .sg-line{width:20px;height:2px;background:#333}
+  .sg-line.done{background:var(--green)}
+  .reveal-grid{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(2,1fr);gap:3px;margin:16px 0;border-radius:12px;overflow:hidden;aspect-ratio:5/2;background:#111}
+  .reveal-tile{background:#333;position:relative;overflow:hidden;transition:opacity .5s}
+  .reveal-tile.revealed{opacity:1}
+  .reveal-tile.hidden-tile{opacity:1;background:#333}
+  .reveal-tile .tile-cover{position:absolute;inset:0;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:1.5em;transition:opacity .5s}
+  .reveal-tile.revealed .tile-cover{opacity:0}
+  .download-btn{display:none;margin:10px auto;text-align:center}
+  .download-btn.show{display:block}
+  .stats{display:flex;justify-content:space-around;margin:14px 0;padding:12px;background:var(--card);border-radius:14px}
+  .stat{text-align:center}
+  .stat-val{font-size:1.6em;font-weight:700}
+  .stat-lbl{font-size:.7em;color:#666;text-transform:uppercase}
+  .stat-val.green{color:var(--green)}
+  .stat-val.red{color:var(--red)}
+  .stat-val.gold{color:var(--gold)}
+  .progress-bar{width:100%;height:5px;background:#333;border-radius:3px;margin-bottom:14px;overflow:hidden}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--gold));border-radius:3px;transition:width .3s}
+  .streak{text-align:center;font-size:.9em;color:var(--gold);min-height:1.2em;margin-bottom:8px}
+  .spell-out{font-size:1.8em;letter-spacing:12px;font-family:'Courier New',monospace;color:var(--green);text-align:center;margin:10px 0;min-height:1.5em}
+  .flash-word{font-size:2.4em;font-weight:700;letter-spacing:4px;margin-bottom:8px}
+  .flash-revealed{font-size:1.6em;letter-spacing:8px;font-family:'Courier New',monospace;color:var(--green);margin:12px 0}
+  .bee{font-size:4em;margin-bottom:16px}
+  .mode-card{background:var(--card);border:2px solid #333;border-radius:16px;padding:20px;margin:10px 0;cursor:pointer;transition:all .2s;text-align:left}
+  .mode-card:active{transform:scale(.98)}
+  .mode-card h3{font-size:1.1em;margin-bottom:6px}
+  .mode-card p{color:#888;font-size:.85em;margin:0}
+  .mode-card.sel{border-color:var(--green)}
+  .round-complete{text-align:center;padding:20px}
+  .round-complete .big-emoji{font-size:4em;margin-bottom:12px}
+  .round-complete h2{font-size:1.4em;margin-bottom:8px}
+  .wrong-panel{background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.2);border-radius:14px;padding:14px;margin-top:12px;text-align:center}
+  .wrong-panel .correct-word{font-size:1.3em;font-weight:700;color:var(--gold);letter-spacing:4px;margin-bottom:10px}
+  .history-screen{padding:16px}
+  .history-word{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--card);border-radius:10px;margin-bottom:6px;font-size:.9em}
+  .history-word .hw-word{font-weight:700;letter-spacing:2px}
+  .history-word .hw-stats{color:#888;font-size:.8em}
+  .hw-bad{border-left:3px solid var(--red)}
+  .hw-ok{border-left:3px solid var(--gold)}
+  .history-summary{background:var(--card);border-radius:14px;padding:16px;margin-bottom:16px;text-align:center}
+  .history-summary .hs-big{font-size:2em;font-weight:700}
+  .hidden{display:none!important}
+  @media(max-width:380px){.hint-display{font-size:1.8em;letter-spacing:6px}.speak-btn{width:56px;height:56px;font-size:1.5em}}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- START SCREEN -->
+  <div id="startScreen">
+    <div class="bee"><img src="../visuals/Otto-bee-logo.png" alt="Otto's Spelling Bee" style="width:200px;border-radius:20px"></div>
+    <h1>Otto's Spelling Bee</h1>
+    <p class="subtitle">Squid Game Edition 🦑</p>
+    <div class="mode-card" onclick="pickMode('spell')" id="modeSpellCard">
+      <h3>✏️ Spell It!</h3>
+      <p>Listen to the word and type it. 3 difficulty levels!</p>
+    </div>
+    <div class="mode-card" onclick="pickMode('flash')" id="modeFlashCard">
+      <h3>🃏 Flashcards</h3>
+      <p>See the pattern, hear the word, flip to reveal spelling</p>
+    </div>
+    <div class="btn-row" style="margin-top:10px">
+      <button class="btn btn-secondary" onclick="showHistory()" style="font-size:.9em">📊 My Progress</button>
+    </div>
+    <div id="modeSettings" class="hidden" style="margin-top:16px">
+      <p style="color:#888;font-size:.85em;margin-bottom:10px">Difficulty:</p>
+      <div class="diff-toggle">
+        <button class="diff-btn active" onclick="pickDiff('easy',this)">🟢 Easy</button>
+        <button class="diff-btn" onclick="pickDiff('medium',this)">🟡 Medium</button>
+        <button class="diff-btn" onclick="pickDiff('hard',this)">🔴 Hard</button>
+      </div>
+      <p style="color:#555;font-size:.75em" id="diffDesc">Some letters shown as hints</p>
+      <p style="color:#888;font-size:.85em;margin:14px 0 8px">Category:</p>
+      <div class="categories" id="startCats"></div>
+      <div class="btn-row" style="margin-top:20px">
+        <button class="btn btn-gold" onclick="startGame()" style="font-size:1.2em;padding:14px 40px">START 🚀</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="gameScreen" class="hidden">
+    <h1>🐝 Spelling Bee</h1>
+    <p class="subtitle" id="catLabel">All Categories</p>
+    <div class="sg-path" id="sgPath"></div>
+    <div class="reveal-grid" id="revealGrid"></div>
+    <div class="progress-bar"><div class="progress-fill" id="progFill" style="width:0%"></div></div>
+    <div class="streak" id="streakTxt"></div>
+    <div class="card" id="card">
+      <span class="diff-label" id="diffBadge"></span>
+      <button class="speak-btn" id="speakBtn" onclick="sayWord()">🔊</button>
+      <div class="pattern-badge" id="patternBadge"></div>
+      <p class="sentence" id="sentenceTxt"></p>
+      <div class="help-btns" id="helpBtns">
+        <button class="btn btn-secondary btn-small" onclick="sayWord()">🔊 Again</button>
+        <button class="btn btn-secondary btn-small" onclick="useSentence()">📖 Sentence</button>
+      </div>
+      <div id="hintArea"><div class="hint-display" id="hintDisplay"></div></div>
+      <div id="flashArea" class="hidden">
+        <div class="flash-word" id="flashWord">🔊 Press to hear</div>
+        <div class="flash-revealed hidden" id="flashRevealed"></div>
+      </div>
+      <div class="spell-out" id="spellOut"></div>
+      <!-- Wrong answer panel -->
+      <div class="wrong-panel hidden" id="wrongPanel">
+        <div class="correct-word" id="wrongCorrectWord"></div>
+        <div class="btn-row" style="margin-top:8px">
+          <button class="btn btn-secondary btn-small" onclick="sayWord()">🔊 Hear it</button>
+          <button class="btn btn-secondary btn-small" onclick="useSentence()">📖 Sentence</button>
+          <button class="btn btn-secondary btn-small" onclick="spellItForMe()">🔤 Spell it</button>
+          <button class="btn btn-primary btn-small" onclick="retryAfterWrong()">Try Again ✏️</button>
+        </div>
+      </div>
+    </div>
+    <div id="spellInputArea">
+      <input type="text" class="spell-input" id="inp" placeholder="TYPE THE WORD..." autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <div class="btn-row" id="normalBtns">
+        <button class="btn btn-secondary" onclick="doSkip()">Skip →</button>
+      </div>
+    </div>
+    <div id="flashNavArea" class="hidden">
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goPrev()">← Back</button>
+        <button class="btn btn-primary" onclick="revealFlash()">Reveal 👀</button>
+        <button class="btn btn-primary" onclick="goNext()">Next →</button>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="stat-val green" id="sCorrect">0</div><div class="stat-lbl">Correct</div></div>
+      <div class="stat"><div class="stat-val red" id="sWrong">0</div><div class="stat-lbl">Tries</div></div>
+      <div class="stat"><div class="stat-val gold" id="sStreak">0</div><div class="stat-lbl">Streak 🔥</div></div>
+      <div class="stat"><div class="stat-val" id="sLeft" style="color:#aaa">0</div><div class="stat-lbl">Left</div></div>
+    </div>
+    <div class="btn-row" style="margin-top:6px">
+      <button class="btn btn-secondary" onclick="restartRound()">🔄 Restart</button>
+      <button class="btn btn-secondary" onclick="goHome()">🏠 Home</button>
+    </div>
+  </div>
+
+  <!-- ROUND COMPLETE -->
+  <div id="roundComplete" class="hidden">
+    <div class="round-complete">
+      <div class="big-emoji" id="rcEmoji">🎉</div>
+      <h1 id="rcTitle">Round Complete!</h1>
+      <p id="rcMsg" style="color:#888;margin:12px 0"></p>
+      <div id="rcImageWrap" style="margin:16px 0;border-radius:12px;overflow:hidden"></div>
+      <div class="download-btn" id="dlBtn"><a class="btn btn-gold" id="dlLink" download="otto-wallpaper.png">📱 Download Wallpaper</a></div>
+      <div id="rcMissedWords" style="margin:16px 0"></div>
+      <div class="stats" style="margin:20px 0">
+        <div class="stat"><div class="stat-val green" id="rcCorrect">0</div><div class="stat-lbl">Correct</div></div>
+        <div class="stat"><div class="stat-val red" id="rcWrong">0</div><div class="stat-lbl">Mistakes</div></div>
+        <div class="stat"><div class="stat-val gold" id="rcStreak">0</div><div class="stat-lbl">Best Streak</div></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-gold" onclick="nextRound()" id="rcNextBtn">Next Round →</button>
+        <button class="btn btn-secondary" onclick="goHome()">🏠 Home</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY SCREEN -->
+  <div id="historyScreen" class="hidden">
+    <div class="history-screen">
+      <h1>📊 My Progress</h1>
+      <div class="history-summary" id="historySummary"></div>
+      <div id="historyTroubleWords"></div>
+      <div id="historyRecent" style="margin-top:16px"></div>
+      <div class="btn-row" style="margin-top:20px">
+        <button class="btn btn-secondary" onclick="clearHistory()">🗑️ Reset</button>
+        <button class="btn btn-primary" onclick="hideHistory()">🏠 Back</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ==================== AUDIO ENGINE (priority-based, no overlap) ====================
+const AUDIO_BASE = '../audio';
+const audioCache = {};
+let currentAudio = null;
+
+function stopAllAudio() {
+  if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; }
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  document.getElementById('speakBtn').classList.remove('playing');
+}
+
+function loadAudio(path) {
+  if (audioCache[path]) return audioCache[path];
+  const a = new Audio(path);
+  a.preload = 'auto';
+  audioCache[path] = a;
+  return a;
+}
+
+function playAudio(path) {
+  return new Promise((resolve) => {
+    if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+    const a = loadAudio(path);
+    a.currentTime = 0;
+    currentAudio = a;
+    a.onended = () => { if (currentAudio === a) currentAudio = null; resolve(); };
+    a.onerror = () => { if (currentAudio === a) currentAudio = null; resolve(); };
+    a.play().catch(() => { if (currentAudio === a) currentAudio = null; resolve(); });
+  });
+}
+
+async function playWordAudio(word) {
+  const path = AUDIO_BASE + '/words/' + word.toLowerCase() + '.mp3';
+  const btn = document.getElementById('speakBtn');
+  btn.classList.add('playing');
+  await playAudio(path);
+  btn.classList.remove('playing');
+}
+
+async function playLetterByLetter(word) {
+  stopAllAudio();
+  const el = document.getElementById('spellOut');
+  el.innerHTML = '';
+  const letters = word.toUpperCase().split('');
+  for (let i = 0; i < letters.length; i++) {
+    const span = document.createElement('span');
+    span.textContent = letters[i];
+    span.style.opacity = '0';
+    span.style.transition = 'opacity 0.3s';
+    el.appendChild(span);
+    setTimeout(() => { span.style.opacity = '1'; }, 50);
+    await playAudio(AUDIO_BASE + '/letters/' + letters[i] + '.mp3');
+    await sleep(150);
+  }
+  await sleep(300);
+  await playAudio(AUDIO_BASE + '/words/' + word.toLowerCase() + '.mp3');
+}
+
+async function playReaction(key) { await playAudio(AUDIO_BASE + '/reactions/' + key + '.mp3'); }
+function playNarrator(key) { return playAudio(AUDIO_BASE + '/narrator/' + key + '.mp3'); }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// Browser TTS for sentences only (words use ElevenLabs audio files)
+function speakSentence(text) {
+  return new Promise((resolve) => {
+    if (!window.speechSynthesis) { resolve(); return; }
+    stopAllAudio();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'en-US';
+    utter.rate = 0.9;
+    utter.onend = resolve;
+    utter.onerror = resolve;
+    window.speechSynthesis.speak(utter);
+  });
+}
+
+// ==================== REWARD IMAGES ====================
+const REWARD_COLORS = [
+  ['#e94560','#0f3460','#16213e','#1a1a2e','#e94560','#533483','#0f3460','#16213e','#e94560','#1a1a2e'],
+  ['#4ecca3','#1a1a2e','#0f3460','#4ecca3','#16213e','#1a1a2e','#4ecca3','#0f3460','#16213e','#4ecca3'],
+  ['#f5af19','#f12711','#f5af19','#1a1a2e','#f12711','#f5af19','#1a1a2e','#f12711','#f5af19','#f12711'],
+  ['#533483','#e94560','#0f3460','#533483','#e94560','#16213e','#533483','#e94560','#0f3460','#533483'],
+  ['#2d6a4f','#40916c','#52b788','#74c69d','#95d5b2','#2d6a4f','#40916c','#52b788','#74c69d','#95d5b2'],
+  ['#f5af19','#e94560','#4ecca3','#533483','#0f3460','#f5af19','#e94560','#4ecca3','#533483','#0f3460'],
+];
+const REWARD_IMAGES = ['../assets/reward1.png','../assets/reward2.png','../assets/reward3.png','../assets/reward4.png','../assets/reward5.png','../assets/reward6.png'];
+let rewardImageAvailable = {};
+function checkRewardImages() {
+  REWARD_IMAGES.forEach((src, i) => {
+    const img = new Image();
+    img.onload = () => { rewardImageAvailable[i] = true; };
+    img.onerror = () => { rewardImageAvailable[i] = false; };
+    img.src = src;
+  });
+}
+checkRewardImages();
+
+function buildRevealGrid() {
+  const grid = document.getElementById('revealGrid');
+  grid.innerHTML = '';
+  const roundIdx = S.round % 6;
+  const icons = ['🦑','⚔️','🎮','💎','🏔️','⛏️','🎯','🔥','⭐','🏆'];
+  for (let i = 0; i < 10; i++) {
+    const tile = document.createElement('div');
+    tile.className = 'reveal-tile hidden-tile';
+    tile.id = 'tile' + i;
+    if (rewardImageAvailable[roundIdx]) {
+      tile.style.backgroundImage = 'url(' + REWARD_IMAGES[roundIdx] + ')';
+      tile.style.backgroundSize = '500% 200%';
+      const col = i % 5, row = Math.floor(i / 5);
+      tile.style.backgroundPosition = (col * 25) + '% ' + (row * 100) + '%';
+    }
+    const cover = document.createElement('div');
+    cover.className = 'tile-cover';
+    cover.style.background = REWARD_COLORS[roundIdx][i];
+    cover.textContent = icons[i];
+    tile.appendChild(cover);
+    grid.appendChild(tile);
+  }
+}
+function revealTile(index) { const tile = document.getElementById('tile' + index); if (tile) tile.classList.add('revealed'); }
+
+// ==================== HISTORY (localStorage) ====================
+const HISTORY_KEY = 'otto_spelling_bee_history';
+function getHistory() { try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || { sessions: [], words: {} }; } catch(e) { return { sessions: [], words: {} }; } }
+function saveHistory(h) { localStorage.setItem(HISTORY_KEY, JSON.stringify(h)); }
+
+function logAttempt(word, correct) {
+  const h = getHistory();
+  const today = new Date().toISOString().slice(0, 10);
+  if (!h.words[word]) h.words[word] = { correct: 0, wrong: 0, lastSeen: '', streak: 0 };
+  const ws = h.words[word];
+  if (correct) { ws.correct++; ws.streak++; } else { ws.wrong++; ws.streak = 0; }
+  ws.lastSeen = today;
+  if (!h.sessions.length || h.sessions[h.sessions.length - 1].date !== today) {
+    h.sessions.push({ date: today, correct: 0, wrong: 0 });
+  }
+  const sess = h.sessions[h.sessions.length - 1];
+  if (correct) sess.correct++; else sess.wrong++;
+  if (h.sessions.length > 30) h.sessions = h.sessions.slice(-30);
+  saveHistory(h);
+}
+
+function showHistory() {
+  const h = getHistory();
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('historyScreen').classList.remove('hidden');
+  const totalCorrect = Object.values(h.words).reduce((s, w) => s + w.correct, 0);
+  const totalWrong = Object.values(h.words).reduce((s, w) => s + w.wrong, 0);
+  const totalWords = Object.keys(h.words).length;
+  const pct = (totalCorrect + totalWrong) ? Math.round(totalCorrect / (totalCorrect + totalWrong) * 100) : 0;
+  let trendHTML = '';
+  if (h.sessions.length >= 2) {
+    const last = h.sessions[h.sessions.length - 1], prev = h.sessions[h.sessions.length - 2];
+    const lp = last.correct + last.wrong ? Math.round(last.correct / (last.correct + last.wrong) * 100) : 0;
+    const pp = prev.correct + prev.wrong ? Math.round(prev.correct / (prev.correct + prev.wrong) * 100) : 0;
+    const diff = lp - pp;
+    if (diff > 0) trendHTML = '<p style="color:var(--green);margin-top:6px">📈 +' + diff + '% better than last time!</p>';
+    else if (diff < 0) trendHTML = '<p style="color:var(--red);margin-top:6px">📉 ' + diff + '% — keep practicing!</p>';
+    else trendHTML = '<p style="color:var(--gold);margin-top:6px">➡️ Same as last time</p>';
+  }
+  document.getElementById('historySummary').innerHTML = '<div class="hs-big" style="color:var(--green)">' + pct + '%</div><p style="color:#888;margin:4px 0">Overall accuracy</p><p style="color:#666;font-size:.8em">' + totalWords + ' words practiced · ' + totalCorrect + ' correct · ' + totalWrong + ' mistakes</p>' + trendHTML;
+  const trouble = Object.entries(h.words).map(function(e) { var w=e[0],s=e[1]; return { word: w, correct: s.correct, wrong: s.wrong, pct: s.correct / (s.correct + s.wrong) }; }).filter(function(w) { return w.wrong > 0; }).sort(function(a, b) { return a.pct - b.pct; }).slice(0, 15);
+  var twHTML = '';
+  if (trouble.length) {
+    twHTML = '<p style="color:#888;font-size:.85em;margin-bottom:8px;text-align:center">⚠️ Words that need practice:</p>';
+    trouble.forEach(function(t) { twHTML += '<div class="history-word hw-bad"><span class="hw-word">' + t.word.toUpperCase() + '</span><span class="hw-stats">✅' + t.correct + ' ❌' + t.wrong + ' (' + Math.round(t.pct * 100) + '%)</span></div>'; });
+  }
+  document.getElementById('historyTroubleWords').innerHTML = twHTML;
+  var recHTML = '<p style="color:#888;font-size:.85em;margin-bottom:8px;text-align:center">📅 Recent sessions:</p>';
+  var recent = h.sessions.slice(-7).reverse();
+  if (!recent.length) recHTML = '<p style="color:#555;text-align:center">No sessions yet. Go play!</p>';
+  recent.forEach(function(s) { var sp = s.correct + s.wrong ? Math.round(s.correct / (s.correct + s.wrong) * 100) : 0; recHTML += '<div class="history-word hw-ok"><span class="hw-word">' + s.date + '</span><span class="hw-stats">✅' + s.correct + ' ❌' + s.wrong + ' — ' + sp + '%</span></div>'; });
+  document.getElementById('historyRecent').innerHTML = recHTML;
+}
+function hideHistory() { document.getElementById('historyScreen').classList.add('hidden'); document.getElementById('startScreen').classList.remove('hidden'); }
+function clearHistory() { if (confirm('Reset all progress? This cannot be undone.')) { localStorage.removeItem(HISTORY_KEY); showHistory(); } }
+
+// ==================== WORD DATA ====================
+const W=[
+{w:"bat",c:"Short Vowels",d:"easy",s:"The bat flew across the dark sky.",p:"CVC short a"},
+{w:"bed",c:"Short Vowels",d:"easy",s:"I made my bed before school.",p:"CVC short e"},
+{w:"big",c:"Short Vowels",d:"easy",s:"That is a very big dog.",p:"CVC short i"},
+{w:"hot",c:"Short Vowels",d:"easy",s:"The soup is too hot to eat.",p:"CVC short o"},
+{w:"bug",c:"Short Vowels",d:"easy",s:"A little bug landed on my hand.",p:"CVC short u"},
+{w:"map",c:"Short Vowels",d:"easy",s:"We looked at the map.",p:"CVC short a"},
+{w:"pet",c:"Short Vowels",d:"easy",s:"My pet hamster is very soft.",p:"CVC short e"},
+{w:"sit",c:"Short Vowels",d:"easy",s:"Please sit down quietly.",p:"CVC short i"},
+{w:"mop",c:"Short Vowels",d:"easy",s:"Mom used a mop to clean.",p:"CVC short o"},
+{w:"cup",c:"Short Vowels",d:"easy",s:"I drank water from my cup.",p:"CVC short u"},
+{w:"stamp",c:"Short Vowels",d:"medium",s:"Put a stamp on the letter.",p:"short a + blend"},
+{w:"blast",c:"Short Vowels",d:"medium",s:"The rocket blast was loud.",p:"short a + blend"},
+{w:"swept",c:"Short Vowels",d:"medium",s:"She swept the floor.",p:"short e + blend"},
+{w:"crisp",c:"Short Vowels",d:"medium",s:"The apple was fresh and crisp.",p:"short i + blend"},
+{w:"stomp",c:"Short Vowels",d:"medium",s:"The elephant likes to stomp.",p:"short o + blend"},
+{w:"clap",c:"Short Vowels",d:"medium",s:"Let's clap our hands!",p:"short a + blend"},
+{w:"spell",c:"Short Vowels",d:"medium",s:"Can you spell your name?",p:"short e + ll"},
+{w:"trick",c:"Short Vowels",d:"medium",s:"The magician did a cool trick.",p:"short i + ck"},
+{w:"block",c:"Short Vowels",d:"medium",s:"He built a tower with blocks.",p:"short o + ck"},
+{w:"craft",c:"Short Vowels",d:"challenging",s:"We made a craft at school.",p:"short a + ft"},
+{w:"sketch",c:"Short Vowels",d:"challenging",s:"She drew a sketch of her cat.",p:"sk + tch"},
+{w:"strict",c:"Short Vowels",d:"challenging",s:"Our teacher is kind but strict.",p:"str + ct"},
+{w:"shrunk",c:"Short Vowels",d:"challenging",s:"My shirt shrunk in the wash.",p:"shr + nk"},
+{w:"chat",c:"Digraphs",d:"easy",s:"Let's chat about your day.",p:"ch"},
+{w:"ship",c:"Digraphs",d:"easy",s:"The big ship sailed away.",p:"sh"},
+{w:"thin",c:"Digraphs",d:"easy",s:"The ice was very thin.",p:"th"},
+{w:"whip",c:"Digraphs",d:"easy",s:"The chef used a whip.",p:"wh"},
+{w:"chop",c:"Digraphs",d:"easy",s:"Dad will chop the wood.",p:"ch"},
+{w:"shut",c:"Digraphs",d:"easy",s:"Please shut the door.",p:"sh"},
+{w:"them",c:"Digraphs",d:"easy",s:"I gave the books to them.",p:"th"},
+{w:"when",c:"Digraphs",d:"easy",s:"When does the movie start?",p:"wh"},
+{w:"chin",c:"Digraphs",d:"easy",s:"He has a scratch on his chin.",p:"ch"},
+{w:"shop",c:"Digraphs",d:"easy",s:"We went to the toy shop.",p:"sh"},
+{w:"church",c:"Digraphs",d:"medium",s:"The old church has a tall tower.",p:"ch...ch"},
+{w:"shrimp",c:"Digraphs",d:"medium",s:"I love eating shrimp.",p:"sh + blend"},
+{w:"think",c:"Digraphs",d:"medium",s:"Think before you answer.",p:"th + nk"},
+{w:"whale",c:"Digraphs",d:"medium",s:"A blue whale is the biggest animal.",p:"wh + magic e"},
+{w:"cheese",c:"Digraphs",d:"medium",s:"I put cheese on my sandwich.",p:"ch + ee"},
+{w:"shadow",c:"Digraphs",d:"medium",s:"My shadow follows me.",p:"sh + ow"},
+{w:"throne",c:"Digraphs",d:"medium",s:"The king sat on his throne.",p:"th + magic e"},
+{w:"white",c:"Digraphs",d:"medium",s:"Snow is white and cold.",p:"wh + magic e"},
+{w:"shield",c:"Digraphs",d:"medium",s:"The knight held up his shield.",p:"sh + ie"},
+{w:"chapter",c:"Digraphs",d:"challenging",s:"Read the next chapter.",p:"ch + er"},
+{w:"shoulder",c:"Digraphs",d:"challenging",s:"She looked over her shoulder.",p:"sh + ou + er"},
+{w:"thousand",c:"Digraphs",d:"challenging",s:"A thousand stars filled the sky.",p:"th + ou"},
+{w:"chocolate",c:"Digraphs",d:"challenging",s:"I love hot chocolate.",p:"ch + late"},
+{w:"flag",c:"Blends",d:"easy",s:"The flag waved in the wind.",p:"fl blend"},
+{w:"tree",c:"Blends",d:"easy",s:"A bird lives in that tree.",p:"tr blend"},
+{w:"skip",c:"Blends",d:"easy",s:"Let's skip to school.",p:"sk blend"},
+{w:"snow",c:"Blends",d:"easy",s:"The snow is perfect for skiing!",p:"sn blend"},
+{w:"swim",c:"Blends",d:"easy",s:"Fish swim in the lake.",p:"sw blend"},
+{w:"glad",c:"Blends",d:"easy",s:"I'm glad you came!",p:"gl blend"},
+{w:"plan",c:"Blends",d:"easy",s:"What's the plan for today?",p:"pl blend"},
+{w:"drop",c:"Blends",d:"easy",s:"Don't drop the glass!",p:"dr blend"},
+{w:"frog",c:"Blends",d:"easy",s:"The frog jumped into the pond.",p:"fr blend"},
+{w:"sled",c:"Blends",d:"easy",s:"We rode the sled down the hill.",p:"sl blend"},
+{w:"planet",c:"Blends",d:"medium",s:"Mars is the red planet.",p:"pl + et"},
+{w:"brave",c:"Blends",d:"medium",s:"The brave knight fought.",p:"br + magic e"},
+{w:"crown",c:"Blends",d:"medium",s:"The queen wore a shiny crown.",p:"cr + ow"},
+{w:"dream",c:"Blends",d:"medium",s:"I had a funny dream.",p:"dr + ea"},
+{w:"freeze",c:"Blends",d:"medium",s:"Water will freeze when cold.",p:"fr + ee + magic e"},
+{w:"glow",c:"Blends",d:"medium",s:"The stars glow in the dark.",p:"gl + ow"},
+{w:"splash",c:"Blends",d:"medium",s:"He made a big splash!",p:"spl blend"},
+{w:"string",c:"Blends",d:"medium",s:"Tie the balloon with string.",p:"str blend"},
+{w:"struggle",c:"Blends",d:"challenging",s:"Don't struggle, I'll help.",p:"str + le"},
+{w:"scratch",c:"Blends",d:"challenging",s:"The cat gave me a scratch.",p:"scr + tch"},
+{w:"sprinkle",c:"Blends",d:"challenging",s:"Sprinkle some sugar on top.",p:"spr + le"},
+{w:"squirrel",c:"Blends",d:"challenging",s:"A squirrel ran up the tree.",p:"squ + rr + el"},
+{w:"strength",c:"Blends",d:"challenging",s:"You need strength to climb.",p:"str + ngth"},
+{w:"car",c:"Bossy R",d:"easy",s:"We drove the car to school.",p:"ar"},
+{w:"bird",c:"Bossy R",d:"easy",s:"A bird sang in the morning.",p:"ir"},
+{w:"star",c:"Bossy R",d:"easy",s:"I can see a bright star.",p:"ar"},
+{w:"turn",c:"Bossy R",d:"easy",s:"Turn left at the corner.",p:"ur"},
+{w:"fern",c:"Bossy R",d:"easy",s:"A green fern grows in the forest.",p:"er"},
+{w:"dirt",c:"Bossy R",d:"easy",s:"My shoes are covered in dirt.",p:"ir"},
+{w:"born",c:"Bossy R",d:"easy",s:"A baby lamb was born.",p:"or"},
+{w:"garden",c:"Bossy R",d:"medium",s:"We planted flowers in the garden.",p:"ar + en"},
+{w:"corner",c:"Bossy R",d:"medium",s:"Wait at the corner.",p:"or + er"},
+{w:"perfect",c:"Bossy R",d:"medium",s:"Your drawing is perfect!",p:"er + ect"},
+{w:"thirty",c:"Bossy R",d:"medium",s:"There are thirty kids in class.",p:"ir + ty"},
+{w:"turtle",c:"Bossy R",d:"medium",s:"The turtle walked slowly.",p:"ur + le"},
+{w:"morning",c:"Bossy R",d:"medium",s:"Good morning! Time for school.",p:"or + ing"},
+{w:"circle",c:"Bossy R",d:"medium",s:"Draw a circle on the paper.",p:"ir + cle"},
+{w:"surprise",c:"Bossy R",d:"challenging",s:"What a nice surprise!",p:"ur + ise"},
+{w:"important",c:"Bossy R",d:"challenging",s:"It is important to be kind.",p:"or + ant"},
+{w:"different",c:"Bossy R",d:"challenging",s:"Each snowflake is different.",p:"er + ent"},
+{w:"hamburger",c:"Bossy R",d:"challenging",s:"I ordered a hamburger.",p:"am + ur + er"},
+{w:"rain",c:"Vowel Teams",d:"easy",s:"The rain made big puddles.",p:"ai team"},
+{w:"play",c:"Vowel Teams",d:"easy",s:"Let's play Minecraft!",p:"ay team"},
+{w:"boat",c:"Vowel Teams",d:"easy",s:"The boat floated on the lake.",p:"oa team"},
+{w:"moon",c:"Vowel Teams",d:"easy",s:"The moon was bright and full.",p:"oo team"},
+{w:"day",c:"Vowel Teams",d:"easy",s:"What a beautiful day!",p:"ay team"},
+{w:"read",c:"Vowel Teams",d:"easy",s:"I love to read before bed.",p:"ea team"},
+{w:"grow",c:"Vowel Teams",d:"easy",s:"Plants grow when you water them.",p:"ow long"},
+{w:"food",c:"Vowel Teams",d:"easy",s:"The food at the party was great.",p:"oo team"},
+{w:"seed",c:"Vowel Teams",d:"easy",s:"We planted a seed.",p:"ee team"},
+{w:"explain",c:"Vowel Teams",d:"medium",s:"Can you explain the rules?",p:"ai team"},
+{w:"between",c:"Vowel Teams",d:"medium",s:"Sit between your friends.",p:"ee team"},
+{w:"teacher",c:"Vowel Teams",d:"medium",s:"Our teacher is very nice.",p:"ea + er"},
+{w:"rainbow",c:"Vowel Teams",d:"medium",s:"A rainbow appeared!",p:"ai + ow"},
+{w:"cartoon",c:"Vowel Teams",d:"medium",s:"My favorite cartoon is on TV.",p:"oo team"},
+{w:"follow",c:"Vowel Teams",d:"medium",s:"Follow me!",p:"ow long"},
+{w:"freedom",c:"Vowel Teams",d:"challenging",s:"Everyone deserves freedom.",p:"ee + om"},
+{w:"sneaker",c:"Vowel Teams",d:"challenging",s:"I lost my left sneaker.",p:"ea + er"},
+{w:"mushroom",c:"Vowel Teams",d:"challenging",s:"I found a mushroom.",p:"oo team"},
+{w:"boy",c:"Diphthongs",d:"easy",s:"The boy ran across the playground.",p:"oy"},
+{w:"coin",c:"Diphthongs",d:"easy",s:"I found a gold coin.",p:"oi"},
+{w:"cow",c:"Diphthongs",d:"easy",s:"The cow said moo.",p:"ow sound"},
+{w:"loud",c:"Diphthongs",d:"easy",s:"The music was too loud.",p:"ou"},
+{w:"saw",c:"Diphthongs",d:"easy",s:"I saw a rainbow yesterday.",p:"aw"},
+{w:"toy",c:"Diphthongs",d:"easy",s:"My favorite toy is Lego.",p:"oy"},
+{w:"down",c:"Diphthongs",d:"easy",s:"Sit down please.",p:"ow sound"},
+{w:"out",c:"Diphthongs",d:"easy",s:"Let's go out and play!",p:"ou"},
+{w:"draw",c:"Diphthongs",d:"easy",s:"I like to draw robots.",p:"aw"},
+{w:"enjoy",c:"Diphthongs",d:"medium",s:"I enjoy playing in the snow.",p:"en + oy"},
+{w:"flower",c:"Diphthongs",d:"medium",s:"The flower bloomed.",p:"ow + er"},
+{w:"mountain",c:"Diphthongs",d:"medium",s:"We skied down the mountain.",p:"ou + ain"},
+{w:"awesome",c:"Diphthongs",d:"medium",s:"That Roblox game is awesome!",p:"aw + some"},
+{w:"destroy",c:"Diphthongs",d:"medium",s:"Don't destroy the sandcastle!",p:"de + oy"},
+{w:"choice",c:"Diphthongs",d:"medium",s:"Pizza or pasta? Your choice.",p:"oi + ce"},
+{w:"tower",c:"Diphthongs",d:"medium",s:"He built a tall tower.",p:"ow + er"},
+{w:"around",c:"Diphthongs",d:"medium",s:"We walked around the park.",p:"a + ou + nd"},
+{w:"crawl",c:"Diphthongs",d:"medium",s:"The baby learned to crawl.",p:"cr + aw + l"},
+{w:"cake",c:"Magic E",d:"easy",s:"We baked a birthday cake.",p:"a_e"},
+{w:"bike",c:"Magic E",d:"easy",s:"I ride my bike to the park.",p:"i_e"},
+{w:"home",c:"Magic E",d:"easy",s:"Let's go home.",p:"o_e"},
+{w:"cute",c:"Magic E",d:"easy",s:"That puppy is so cute.",p:"u_e"},
+{w:"name",c:"Magic E",d:"easy",s:"What is your name?",p:"a_e"},
+{w:"time",c:"Magic E",d:"easy",s:"What time is the game?",p:"i_e"},
+{w:"bone",c:"Magic E",d:"easy",s:"The dog chewed on a bone.",p:"o_e"},
+{w:"huge",c:"Magic E",d:"easy",s:"That world is huge!",p:"u_e"},
+{w:"lake",c:"Magic E",d:"easy",s:"We went fishing at the lake.",p:"a_e"},
+{w:"five",c:"Magic E",d:"easy",s:"I have five Lego sets.",p:"i_e"},
+{w:"escape",c:"Magic E",d:"medium",s:"The cat tried to escape.",p:"e + a_e"},
+{w:"invite",c:"Magic E",d:"medium",s:"I want to invite you.",p:"i_e"},
+{w:"explore",c:"Magic E",d:"medium",s:"Let's explore the cave!",p:"o_e"},
+{w:"costume",c:"Magic E",d:"medium",s:"My costume was a creeper.",p:"u_e"},
+{w:"mistake",c:"Magic E",d:"medium",s:"Everyone makes a mistake.",p:"a_e"},
+{w:"sunshine",c:"Magic E",d:"medium",s:"The sunshine melted the snow.",p:"i_e"},
+{w:"excuse",c:"Magic E",d:"medium",s:"Excuse me, can I pass?",p:"u_e"},
+{w:"complete",c:"Magic E",d:"medium",s:"Complete your homework.",p:"e_e"},
+{w:"back",c:"Endings",d:"easy",s:"Come back here!",p:"-ck ending"},
+{w:"ring",c:"Endings",d:"easy",s:"The bell will ring.",p:"-ng ending"},
+{w:"pink",c:"Endings",d:"easy",s:"She wore a pink dress.",p:"-nk ending"},
+{w:"catch",c:"Endings",d:"easy",s:"Catch the ball!",p:"-tch ending"},
+{w:"edge",c:"Endings",d:"easy",s:"Don't stand near the edge.",p:"-dge ending"},
+{w:"duck",c:"Endings",d:"easy",s:"The duck swam in the pond.",p:"-ck ending"},
+{w:"song",c:"Endings",d:"easy",s:"That's my favorite song.",p:"-ng ending"},
+{w:"match",c:"Endings",d:"easy",s:"We won the football match!",p:"-tch ending"},
+{w:"bridge",c:"Endings",d:"easy",s:"We crossed the old bridge.",p:"-dge ending"},
+{w:"attack",c:"Endings",d:"medium",s:"The creeper started an attack!",p:"a + -ck"},
+{w:"belong",c:"Endings",d:"medium",s:"These toys belong to me.",p:"be + -ng"},
+{w:"kitchen",c:"Endings",d:"medium",s:"Mom is in the kitchen.",p:"-tch + en"},
+{w:"knowledge",c:"Endings",d:"medium",s:"Knowledge is power!",p:"silent k + -dge"},
+{w:"unlock",c:"Endings",d:"medium",s:"Unlock the door!",p:"un + -ck"},
+{w:"amazing",c:"Endings",d:"medium",s:"That trick was amazing!",p:"a + -zing"},
+{w:"blanket",c:"Endings",d:"medium",s:"Wrap in a warm blanket.",p:"-nk + et"},
+{w:"fridge",c:"Endings",d:"medium",s:"The juice is in the fridge.",p:"fr + -dge"},
+{w:"city",c:"Tricky Letters",d:"easy",s:"Prague is a beautiful city.",p:"soft c = s"},
+{w:"giant",c:"Tricky Letters",d:"easy",s:"The giant lived on a mountain.",p:"soft g = j"},
+{w:"phone",c:"Tricky Letters",d:"easy",s:"Can I use your phone?",p:"ph = f"},
+{w:"knee",c:"Tricky Letters",d:"easy",s:"I hurt my knee.",p:"silent k"},
+{w:"write",c:"Tricky Letters",d:"easy",s:"Write your name on the paper.",p:"silent w"},
+{w:"center",c:"Tricky Letters",d:"medium",s:"Meet me in the center.",p:"soft c + er"},
+{w:"gentle",c:"Tricky Letters",d:"medium",s:"Be gentle with the rabbit.",p:"soft g + le"},
+{w:"dolphin",c:"Tricky Letters",d:"medium",s:"We saw a dolphin jump!",p:"ph = f"},
+{w:"knight",c:"Tricky Letters",d:"medium",s:"The knight wore shiny armor.",p:"silent k + gh"},
+{w:"wrong",c:"Tricky Letters",d:"medium",s:"That answer is wrong.",p:"silent w"},
+{w:"celebrate",c:"Tricky Letters",d:"challenging",s:"Let's celebrate!",p:"soft c + ate"},
+{w:"imagine",c:"Tricky Letters",d:"challenging",s:"Imagine you're in Minecraft.",p:"soft g + ine"},
+{w:"photograph",c:"Tricky Letters",d:"challenging",s:"She took a photograph.",p:"ph + ph"},
+{w:"wrinkle",c:"Tricky Letters",d:"challenging",s:"There was a wrinkle in his shirt.",p:"silent w + nk + le"},
+{w:"creeper",c:"Gaming 🎮",d:"medium",s:"The creeper exploded near my house!",p:"ee vowel team + er"},
+{w:"diamond",c:"Gaming 🎮",d:"medium",s:"I found a diamond in the cave!",p:"dia + mond"},
+{w:"potion",c:"Gaming 🎮",d:"medium",s:"The potion made me stronger.",p:"ti = sh sound"},
+{w:"village",c:"Gaming 🎮",d:"medium",s:"I built a village in Minecraft.",p:"soft g + -age"},
+{w:"enchant",c:"Gaming 🎮",d:"medium",s:"Enchant your sword!",p:"en + ch + ant"},
+{w:"survive",c:"Gaming 🎮",d:"medium",s:"Can you survive the Squid Game?",p:"sur + i_e"},
+{w:"challenge",c:"Gaming 🎮",d:"challenging",s:"This is a real challenge!",p:"ch + soft g + -enge"},
+{w:"treasure",c:"Gaming 🎮",d:"challenging",s:"We found hidden treasure!",p:"ea + sure"},
+{w:"monster",c:"Gaming 🎮",d:"medium",s:"A monster spawned in the dark!",p:"mon + ster"},
+{w:"adventure",c:"Gaming 🎮",d:"challenging",s:"Let's go on an adventure!",p:"ad + ven + ture"},
+];
+
+const CATS=[...new Set(W.map(w=>w.c))];
+const ROUNDS=6;
+const WORDS_PER_ROUND=10;
+
+// ==================== STATE ====================
+let S={mode:'spell',diff:'easy',cat:'all',pool:[],idx:0,correct:0,wrong:0,streak:0,bestStreak:0,round:0,roundWords:[],tilesRevealed:0,wrongState:false,missedWords:[]};
+
+// ==================== INIT ====================
+function buildStartCats(){
+  const el=document.getElementById('startCats');
+  el.innerHTML='<button class="cat-btn active" onclick="pickCat(\'all\',this)">All</button>';
+  CATS.forEach(function(c){el.innerHTML+='<button class="cat-btn" onclick="pickCat(\''+c+'\',this)">'+c+'</button>';});
+}
+buildStartCats();
+
+function pickMode(m){S.mode=m;document.getElementById('modeSpellCard').classList.toggle('sel',m==='spell');document.getElementById('modeFlashCard').classList.toggle('sel',m==='flash');document.getElementById('modeSettings').classList.remove('hidden');}
+function pickDiff(d,btn){S.diff=d;document.querySelectorAll('.diff-btn').forEach(function(b){b.classList.remove('active')});btn.classList.add('active');document.getElementById('diffDesc').textContent={easy:'Some letters shown as hints',medium:'Only letter count (blanks)',hard:'No hints — just listen!'}[d];}
+function pickCat(c,btn){S.cat=c;document.querySelectorAll('#startCats .cat-btn').forEach(function(b){b.classList.remove('active')});btn.classList.add('active');}
+
+// ==================== GAME ====================
+async function startGame(){
+  var pool=S.cat==='all'?W.slice():W.filter(function(w){return w.c===S.cat});
+  shuffle(pool);S.pool=pool;S.round=0;S.correct=0;S.wrong=0;S.streak=0;S.bestStreak=0;S.missedWords=[];
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('roundComplete').classList.add('hidden');
+  document.getElementById('gameScreen').classList.remove('hidden');
+  document.getElementById('catLabel').textContent=S.cat==='all'?'All Categories':S.cat;
+  var isSpell=S.mode==='spell';
+  document.getElementById('hintArea').classList.toggle('hidden',!isSpell);
+  document.getElementById('flashArea').classList.toggle('hidden',isSpell);
+  document.getElementById('spellInputArea').classList.toggle('hidden',!isSpell);
+  document.getElementById('flashNavArea').classList.toggle('hidden',isSpell);
+  buildPath();
+  await playNarrator('welcome');
+  await sleep(500);
+  startRound();
+}
+
+async function startRound(){
+  var start=S.round*WORDS_PER_ROUND;
+  S.roundWords=S.pool.slice(start,start+WORDS_PER_ROUND);
+  if(!S.roundWords.length){shuffle(S.pool);S.round=0;S.roundWords=S.pool.slice(0,WORDS_PER_ROUND);}
+  S.idx=0;S.tilesRevealed=0;S.missedWords=[];
+  updatePath();buildRevealGrid();updateStats();
+  var rKey='round'+(S.round+1);
+  try{ await playNarrator(rKey); await sleep(600); }catch(e){}
+  showWord();
+}
+
+function buildPath(){
+  var el=document.getElementById('sgPath');var html='';
+  var total=Math.min(ROUNDS,Math.ceil(S.pool.length/WORDS_PER_ROUND));
+  for(var i=0;i<total;i++){
+    if(i>0)html+='<div class="sg-line" id="sgLine'+i+'"></div>';
+    html+='<div class="sg-step" id="sgStep'+i+'">R'+(i+1)+'</div>';
+  }
+  el.innerHTML=html;
+}
+
+function updatePath(){
+  var total=Math.min(ROUNDS,Math.ceil(S.pool.length/WORDS_PER_ROUND));
+  for(var i=0;i<total;i++){
+    var step=document.getElementById('sgStep'+i),line=document.getElementById('sgLine'+i);
+    if(!step)continue;step.classList.remove('done','current','locked');
+    if(i<S.round)step.classList.add('done');else if(i===S.round)step.classList.add('current');else step.classList.add('locked');
+    if(line)line.classList.toggle('done',i<=S.round);
+  }
+}
+
+function showWord(){
+  if(S.idx>=S.roundWords.length){finishRound();return;}
+  var word=cur(),card=document.getElementById('card');
+  card.classList.remove('correct-anim','wrong-anim');
+  S.wrongState=false;
+  document.getElementById('wrongPanel').classList.add('hidden');
+  document.getElementById('sentenceTxt').classList.remove('visible');
+  var badge=document.getElementById('diffBadge');
+  badge.textContent=word.d.charAt(0).toUpperCase()+word.d.slice(1);
+  badge.className='diff-label diff-'+word.d;
+  document.getElementById('patternBadge').textContent='💡 '+word.p;
+  document.getElementById('sentenceTxt').textContent=word.s;
+  document.getElementById('spellOut').innerHTML='';
+  if(S.mode==='spell'){
+    document.getElementById('hintDisplay').innerHTML=buildHint(word.w,S.diff);
+    var inp=document.getElementById('inp');inp.value='';inp.className='spell-input';inp.placeholder='TYPE THE WORD...';inp.disabled=false;
+    document.getElementById('normalBtns').classList.remove('hidden');
+    setTimeout(function(){inp.focus()},100);
+  }else{
+    document.getElementById('flashWord').textContent='🔊 Press to hear';
+    document.getElementById('flashRevealed').classList.add('hidden');
+  }
+  document.getElementById('progFill').style.width=(S.roundWords.length?(S.idx/S.roundWords.length*100):0)+'%';
+  setTimeout(function(){sayWord()},300);
+}
+
+function buildHint(word,diff){
+  var l=word.split('');
+  if(diff==='hard')return '';
+  if(diff==='medium')return l.map(function(){return '<span style="display:inline-block;width:.7em;border-bottom:3px solid #555;margin:0 4px">&nbsp;</span>'}).join('');
+  var r=new Set([0,l.length-1]);
+  if(l.length>4)r.add(Math.floor(l.length/2));
+  if(l.length>7)r.add(Math.floor(l.length/3));
+  return l.map(function(c,i){return r.has(i)?'<span style="color:var(--green);font-weight:700">'+c.toUpperCase()+'</span>':'<span style="display:inline-block;width:.7em;border-bottom:3px solid #555;margin:0 4px">&nbsp;</span>'}).join('');
+}
+
+// ==================== TTS ====================
+async function sayWord(){
+  var word=cur();if(!word)return;
+  stopAllAudio();
+  await playWordAudio(word.w);
+}
+
+// Use in a sentence — browser TTS for sentences, ElevenLabs for words
+async function useSentence(){
+  var word=cur();if(!word)return;
+  document.getElementById('sentenceTxt').classList.add('visible');
+  await speakSentence(word.s);
+}
+
+// Spell it for me (button after wrong answer)
+async function spellItForMe(){
+  var word=cur();if(!word)return;
+  await playLetterByLetter(word.w);
+}
+
+// ==================== CHECK (auto-submit on correct) ====================
+var checking=false;
+
+async function checkAnswer(){
+  if(checking||S.wrongState)return;var word=cur();if(!word)return;
+  var inp=document.getElementById('inp'),answer=inp.value.trim().toLowerCase();
+  if(!answer){inp.focus();return;}
+  checking=true;var card=document.getElementById('card');
+
+  if(answer===word.w.toLowerCase()){
+    // CORRECT — auto-confirmed
+    S.correct++;S.streak++;if(S.streak>S.bestStreak)S.bestStreak=S.streak;
+    inp.className='spell-input ok';inp.disabled=true;
+    card.classList.add('correct-anim');
+    logAttempt(word.w, true);
+    revealTile(S.tilesRevealed);S.tilesRevealed++;
+    stopAllAudio();
+    var rKeys=['correct1','correct2','correct3','correct4','correct5'];
+    if(S.streak>=10) await playReaction('streak10');
+    else if(S.streak>=5) await playReaction('streak5');
+    else if(S.streak>=3) await playReaction('streak3');
+    else await playReaction(rKeys[Math.floor(Math.random()*rKeys.length)]);
+    await sleep(400);
+    await playLetterByLetter(word.w);
+    await sleep(400);
+    card.classList.remove('correct-anim');S.idx++;showWord();updateStats();checking=false;
+  }else{
+    // WRONG — show panel with options (hear it, sentence, spell it, try again)
+    S.wrong++;S.streak=0;
+    inp.className='spell-input err';
+    card.classList.add('wrong-anim');
+    logAttempt(word.w, false);
+    if(S.missedWords.indexOf(word.w)===-1) S.missedWords.push(word.w);
+    stopAllAudio();
+    await playReaction(Math.random()>.5?'wrong':'tryagain');
+    S.wrongState=true;
+    document.getElementById('wrongCorrectWord').textContent=word.w.toUpperCase();
+    document.getElementById('wrongPanel').classList.remove('hidden');
+    document.getElementById('normalBtns').classList.add('hidden');
+    inp.disabled=true;
+    setTimeout(function(){card.classList.remove('wrong-anim');updateStats();checking=false;},600);
+  }
+}
+
+function retryAfterWrong(){
+  S.wrongState=false;
+  document.getElementById('wrongPanel').classList.add('hidden');
+  document.getElementById('normalBtns').classList.remove('hidden');
+  var inp=document.getElementById('inp');
+  inp.disabled=false;inp.value='';inp.className='spell-input';inp.placeholder='Try again...';inp.focus();
+}
+
+function doSkip(){
+  stopAllAudio();S.streak=0;
+  var word=cur();
+  if(word&&S.missedWords.indexOf(word.w)===-1) S.missedWords.push(word.w);
+  playReaction('skip');S.idx++;showWord();updateStats();
+}
+
+// Auto-submit: fires on every keystroke, submits when input matches word
+function onInput(){
+  if(checking||S.wrongState)return;
+  var word=cur();if(!word)return;
+  var val=document.getElementById('inp').value.trim().toLowerCase();
+  if(val.length>0&&val===word.w.toLowerCase()) checkAnswer();
+}
+
+// ==================== FLASH ====================
+function revealFlash(){
+  var word=cur();if(!word)return;
+  document.getElementById('flashWord').textContent=word.w.toUpperCase();
+  var rev=document.getElementById('flashRevealed');
+  rev.textContent=word.w.toUpperCase().split('').join(' · ');rev.classList.remove('hidden');
+  playLetterByLetter(word.w);
+}
+function goNext(){stopAllAudio();S.idx++;showWord();}
+function goPrev(){stopAllAudio();S.idx=Math.max(0,S.idx-1);showWord();}
+
+// ==================== ROUND FINISH ====================
+async function finishRound(){
+  stopAllAudio();
+  document.getElementById('gameScreen').classList.add('hidden');
+  document.getElementById('roundComplete').classList.remove('hidden');
+  var total=S.correct+S.wrong;
+  var pct=total?Math.round(S.correct/total*100):0;
+  var emoji,title,msg;
+  if(pct>=90){emoji='🏆';title='AMAZING!';msg='You crushed it!';}
+  else if(pct>=70){emoji='🌟';title='Great job!';msg='Almost perfect!';}
+  else if(pct>=50){emoji='💪';title='Good effort!';msg="You're getting better!";}
+  else{emoji='🦑';title='Keep trying!';msg='Every mistake teaches you!';}
+  document.getElementById('rcEmoji').textContent=emoji;
+  document.getElementById('rcTitle').textContent=title+' Round '+(S.round+1);
+  document.getElementById('rcMsg').textContent=msg;
+  document.getElementById('rcCorrect').textContent=S.correct;
+  document.getElementById('rcWrong').textContent=S.wrong;
+  document.getElementById('rcStreak').textContent=S.bestStreak;
+  var roundIdx=S.round%6;
+  var imgWrap=document.getElementById('rcImageWrap');
+  if(rewardImageAvailable[roundIdx]){
+    imgWrap.innerHTML='<img src="'+REWARD_IMAGES[roundIdx]+'" style="width:100%;border-radius:12px">';
+    document.getElementById('dlBtn').classList.add('show');
+    document.getElementById('dlLink').href=REWARD_IMAGES[roundIdx];
+  }else{imgWrap.innerHTML='';document.getElementById('dlBtn').classList.remove('show');}
+  var mwEl=document.getElementById('rcMissedWords');
+  if(S.missedWords.length){
+    var mwHTML='<p style="color:var(--red);text-align:center;margin-bottom:8px">⚠️ Words to review:</p>';
+    S.missedWords.forEach(function(w){mwHTML+='<div class="history-word hw-bad"><span class="hw-word">'+w.toUpperCase()+'</span></div>';});
+    mwEl.innerHTML=mwHTML;
+  }else{mwEl.innerHTML='<p style="color:var(--green);text-align:center">✨ Perfect round — no mistakes!</p>';}
+  var totalR=Math.min(ROUNDS,Math.ceil(S.pool.length/WORDS_PER_ROUND));
+  document.getElementById('rcNextBtn').textContent=S.round+1>=totalR?'🏆 Play Again':'Next Round →';
+  try{if(pct>=70)await playNarrator('complete');else await playNarrator('eliminated');}catch(e){}
+}
+
+async function nextRound(){
+  stopAllAudio();
+  var totalR=Math.min(ROUNDS,Math.ceil(S.pool.length/WORDS_PER_ROUND));
+  S.round++;if(S.round>=totalR){S.round=0;shuffle(S.pool);}
+  S.correct=0;S.wrong=0;S.streak=0;S.bestStreak=0;S.missedWords=[];
+  document.getElementById('roundComplete').classList.add('hidden');
+  document.getElementById('gameScreen').classList.remove('hidden');
+  updatePath();startRound();
+}
+
+// ==================== UTILS ====================
+function cur(){return S.roundWords[S.idx]||null;}
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}}
+function updateStats(){
+  document.getElementById('sCorrect').textContent=S.correct;
+  document.getElementById('sWrong').textContent=S.wrong;
+  document.getElementById('sStreak').textContent=S.bestStreak;
+  document.getElementById('sLeft').textContent=Math.max(0,S.roundWords.length-S.idx);
+  var st=document.getElementById('streakTxt');
+  if(S.streak>=5)st.textContent='🔥🔥🔥 '+S.streak+' in a row! UNSTOPPABLE!';
+  else if(S.streak>=3)st.textContent='🔥 '+S.streak+' in a row!';
+  else st.textContent='';
+}
+function restartRound(){stopAllAudio();S.correct=0;S.wrong=0;S.streak=0;S.bestStreak=0;S.tilesRevealed=0;S.missedWords=[];shuffle(S.roundWords);S.idx=0;buildRevealGrid();showWord();updateStats();}
+function goHome(){stopAllAudio();document.getElementById('gameScreen').classList.add('hidden');document.getElementById('roundComplete').classList.add('hidden');document.getElementById('startScreen').classList.remove('hidden');document.getElementById('modeSettings').classList.add('hidden');document.getElementById('modeSpellCard').classList.remove('sel');document.getElementById('modeFlashCard').classList.remove('sel');}
+
+// ==================== KEYBOARD ====================
+var inpEl=document.getElementById('inp');
+inpEl.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();if(S.wrongState)retryAfterWrong();else checkAnswer();}});
+inpEl.addEventListener('input',onInput);
+
+// ==================== PWA ====================
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('../sw.js').catch(function(){});
+}
+</script>
+</body>
+</html>
